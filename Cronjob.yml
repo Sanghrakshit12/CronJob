@@ -2,18 +2,30 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: restart-deployments
+  namespace: cronjob
 spec:
-  schedule: "0 0 * * *"  # This cron schedule means midnight UTC every day
+  concurrencyPolicy: Forbid 
+  schedule: '0 0 */3 * *'    
   jobTemplate:
     spec:
+      backoffLimit: 2 
+      activeDeadlineSeconds: 600 
       template:
         spec:
+          serviceAccountName: restart-deployments 
+          restartPolicy: Never
           containers:
-          - name: restart-container
-            image: bitnami/kubectl:latest  # You can use any image with kubectl
-            command:
-            - /bin/sh
-            - -c
-            - |
-              kubectl rollout restart deployment dummy-deployment
-          restartPolicy: OnFailure
+            - name: kubectl1
+              image: bitnami/kubectl
+              command: 
+                - 'kubectl'
+                - 'rollout'
+                - 'restart'
+                - 'deployment/nginx-deployment'
+            - name: kubectl2
+              image: bitnami/kubectl 
+              command: 
+                - 'kubectl'
+                - 'rollout'
+                - 'restart'
+                - 'deployment/mongo-deployment'
